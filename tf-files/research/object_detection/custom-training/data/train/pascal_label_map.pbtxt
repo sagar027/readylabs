@@ -1,0 +1,16 @@
+item {
+ id: 1
+ name: 'camera'
+}
+item {
+ id: 2
+ name: 'phonemessages'
+}
+item {
+ id: 3
+ name: 'clock'
+}
+item {
+ id: 4
+ name: 'calendar'
+}
