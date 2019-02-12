@@ -1,0 +1,322 @@
+﻿{
+    "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+    "contentVersion": "1.0.0.1",
+    "parameters": {
+      "rgLocation": {
+        "defaultValue": "westus",
+        "type": "String"
+      },
+        "rgName": {
+            "defaultValue": "rdlab315",
+            "type": "String"
+        }
+    },
+    "variables": {
+        "uniquestring": "[substring(concat(parameters('rgName'), '-', uniqueString(parameters('rgName'))), 0, 13)]",
+        "location": "westus",
+        "imagePublisher": "Canonical",
+        "imageOffer": "UbuntuServer",
+        "sku": "18.04-LTS",
+        "nicName": "[variables('uniquestring')]",
+        "addressPrefix": "10.0.0.0/16",
+        "subnetName": "Subnet",
+        "subnetPrefix": "10.0.0.0/24",
+        "storageAccountType": "Standard_LRS",
+        "publicIPAddressType": "Dynamic",
+        "dnsNameForPublicIP": "[variables('uniquestring')]",
+        "publicIPAddressName": "[variables('uniquestring')]",
+        "vmName": "[variables('uniquestring')]",
+        "vmSize": "Standard_DS3_v2",
+        "virtualNetworkName": "[variables('uniquestring')]",
+        "deploymentName": "[concat(variables('uniquestring'),'-deployment')]",
+        "nsgName": "[concat(variables('uniquestring'),'-nsg')]",
+        "nsgId": "[concat(subscription().id, '/resourceGroups/', parameters('rgName'), '/providers/Microsoft.Network/networkSecurityGroups/', variables('nsgName'))]",
+        "vnetID": "[concat(subscription().id, '/resourceGroups/', parameters('rgName'), '/providers/Microsoft.Network/virtualNetworks/', variables('virtualNetworkName'))]",
+        "subnetRef": "[concat(variables('vnetID'),'/subnets/',variables('subnetName'))]",
+        "fqdn": "[concat(variables('vmName'),'.', variables('location'),'.cloudapp.azure.com')]",
+        "jupyterUrl": "[concat('http://', variables('fqdn'),':8000')]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Resources/resourceGroups",
+            "name": "[parameters('rgName')]",
+            "apiVersion": "2018-05-01",
+            "location": "[parameters('rgLocation')]",
+            "properties": {}
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "name": "[variables('deploymentName')]",
+            "apiVersion": "2018-05-01",
+            "resourceGroup": "[parameters('rgName')]",
+            "properties": {
+                "mode": "Incremental",
+
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {},
+                    "variables": {},
+                    "resources": [
+                        {
+                            "apiVersion": "2018-05-01",
+                            "type": "Microsoft.Network/networkSecurityGroups",
+                            "location": "[variables('location')]",
+                            "name": "[variables('nsgName')]",
+                            "properties": {
+                              "securityRules": [
+                                {
+                                  "name": "Allow-SSH",
+                                  "properties": {
+                                    "protocol": "Tcp",
+                                    "sourcePortRange": "*",
+                                    "sourceAddressPrefix": "*",
+                                    "destinationAddressPrefix": "*",
+                                    "access": "Allow",
+                                    "priority": 100,
+                                    "direction": "Inbound",
+                                    "sourcePortRanges": [],
+                                    "destinationPortRanges": [
+                                      "22"
+                                    ],
+                                    "destinationPortRange": ""
+                                  }
+                                },
+                                {
+                                  "name": "Allow-Jupyter",
+                                  "properties": {
+                                    "protocol": "Tcp",
+                                    "sourcePortRange": "*",
+                                    "sourceAddressPrefix": "*",
+                                    "destinationAddressPrefix": "*",
+                                    "access": "Allow",
+                                    "priority": 101,
+                                    "direction": "Inbound",
+                                    "sourcePortRanges": [],
+                                    "destinationPortRanges": [
+                                      "8000"
+                                    ],
+                                    "destinationPortRange": ""
+                                  }
+                                },
+                                {
+                                  "name": "Allow-TFBoard",
+                                  "properties": {
+                                    "protocol": "Tcp",
+                                    "sourcePortRange": "*",
+                                    "sourceAddressPrefix": "*",
+                                    "destinationAddressPrefix": "*",
+                                    "access": "Allow",
+                                    "priority": 102,
+                                    "direction": "Inbound",
+                                    "sourcePortRanges": [],
+                                    "destinationPortRanges": [
+                                      "6006"
+                                    ],
+                                    "destinationPortRange": ""
+                                  }
+                                }
+                              ]
+                            }
+                        },
+                        {
+                            "apiVersion": "2015-05-01-preview",
+                            "type": "Microsoft.Network/publicIPAddresses",
+                            "name": "[variables('publicIPAddressName')]",
+                            "location": "[variables('location')]",
+                            "properties": {
+                                "publicIPAllocationMethod": "[variables('publicIPAddressType')]",
+                                "dnsSettings": {
+                                    "domainNameLabel": "[variables('publicIPAddressName')]"
+                                }
+                            }
+                        },
+                        {
+                            "apiVersion": "2018-05-01",
+                            "type": "Microsoft.Network/virtualNetworks",
+                            "name": "[variables('virtualNetworkName')]",
+                            "location": "[variables('location')]",
+                            "dependsOn": [
+                                "[concat('Microsoft.Network/networkSecurityGroups/', variables('nsgName'))]"
+                            ],
+                            "properties": {
+                                "addressSpace": {
+                                    "addressPrefixes": [
+                                        "[variables('addressPrefix')]"
+                                    ]
+                                },
+                                "subnets": [
+                                    {
+                                        "name": "[variables('subnetName')]",
+                                        "properties": {
+                                            "addressPrefix": "[variables('subnetPrefix')]"
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                       {
+                            "apiVersion": "2018-01-01",
+                            "type": "Microsoft.Network/networkInterfaces",
+                            "name": "[variables('nicName')]",
+                            "location": "[variables('location')]",
+                            "dependsOn": [
+                                "[concat('Microsoft.Network/publicIPAddresses/', variables('publicIPAddressName'))]",
+                                "[concat('Microsoft.Network/networkSecurityGroups/', variables('nsgName'))]",
+                                "[concat('Microsoft.Network/virtualNetworks/', variables('virtualNetworkName'))]"
+                            ],
+                            "properties": {
+                                "ipConfigurations": [
+                                    {
+                                        "name": "ipconfig1",
+                                        "properties": {
+                                            "privateIPAllocationMethod": "Dynamic",
+                                            "publicIPAddress": {
+                                                "id": "[concat(subscription().id, '/resourceGroups/', parameters('rgName'), '/providers/Microsoft.Network/publicIPAddresses/',variables('publicIPAddressName'))]",
+                                                "properties": {
+                                                    "dnsSettings": {
+                                                        "domainNameLabel": "[variables('dnsNameForPublicIP')]"
+                                                    }
+                                                }
+                                            },
+                                            "subnet": {
+                                                "id": "[variables('subnetRef')]"
+                                            }
+                                        }
+                                    }
+                                ],
+                                "networkSecurityGroup": {
+                                    "id": "[variables('nsgId')]"
+                                }
+                            }
+                        },
+                      {
+                        "apiVersion": "2017-03-30",
+                        "type": "Microsoft.Compute/virtualMachines",
+                        "name": "[variables('vmName')]",
+                        "location": "[variables('location')]",
+                        "tags": {
+                          "Application": "DataScience"
+                        },
+                        "dependsOn": [
+                          "[concat('Microsoft.Network/networkInterfaces/', variables('nicName'))]"
+                        ],
+                        "properties": {
+                          "hardwareProfile": {
+                            "vmSize": "[variables('vmSize')]"
+                          },
+                          "osProfile": {
+                            "computerName": "[variables('vmName')]",
+                            "adminUsername": "labadmin",
+                            "adminPassword": "ObjDetLab@0192"
+                          },
+                          "storageProfile": {
+                            "imageReference": {
+                              "publisher": "[variables('imagePublisher')]",
+                              "offer": "[variables('imageOffer')]",
+                              "sku": "[variables('sku')]",
+                              "version": "latest"
+                            },
+                            "osDisk": {
+                              "managedDisk": {
+                                "storageAccountType": "[variables('storageAccountType')]"
+                              },
+                              "createOption": "FromImage"
+                            }
+                          },
+                          "networkProfile": {
+                            "networkInterfaces": [
+                              {
+                                "id": "[concat(subscription().id, '/resourceGroups/', parameters('rgName'), '/providers/Microsoft.Network/networkInterfaces/',variables('nicName'))]"
+                              }
+                            ]
+                          },
+                          "diagnosticsProfile": {
+                            "bootDiagnostics": {
+                              "enabled": false
+                            }
+                          }
+                        },
+                        "resources": [
+                          {
+                            "name": "config",
+                            "type": "extensions",
+                            "location": "[variables('location')]",
+                            "apiVersion": "2016-03-30",
+                            "dependsOn": [
+                              "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+                            ],
+                            "tags": {
+                              "displayName": "config"
+                            },
+                            "properties": {
+                              "publisher": "Microsoft.OSTCExtensions",
+                              "type": "CustomScriptForLinux",
+                              "typeHandlerVersion": "1.4",
+                              "autoUpgradeMinorVersion": true,
+                              "settings": {
+                                "fileUris": [
+                                  "https://raw.githubusercontent.com/sagar027/readylabs/master/deps.sh"
+                                ],
+                                "commandToExecute": "bash deps.sh"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                        {
+                            "name": "[variables('uniquestring')]",
+                            "type": "Microsoft.Logic/workflows",
+                            "location": "[variables('location')]",
+                            "apiVersion": "2018-07-01-preview",
+                            "dependsOn": [],
+                            "tags": {
+                                "displayName": "logicapp"
+                            },
+                            "properties": {
+                                "definition": {
+                                    "$schema": "https://schema.management.azure.com/schemas/2016-06-01/subscriptionDeploymentTemplate.json#",
+                                    "contentVersion": "1.0.0.1",
+                                    "actions": {},
+                                    "outputs": {},
+                                    "parameters": {},
+                                    "triggers": {}
+                                },
+                                "parameters": {}
+                            }
+                        }
+                    ]
+                }
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Resources/resourceGroups/', parameters('rgName'))]"
+            ]
+        }
+    ],
+  "outputs": {
+    "vm_name": {
+      "type": "String",
+      "value": "[variables('vmName')]"
+    },
+    "vm_fqdn": {
+      "type": "String",
+      "value": "[variables('fqdn')]"
+    },
+    "vm_ssh": {
+      "type": "String",
+      "value": "[concat('labadmin@',variables('fqdn'))]"
+    },
+    "jupyter_url": {
+      "type": "String",
+      "value": "[variables('jupyterUrl')]"
+    },
+    "vm_username": {
+      "type": "String",
+      "value": "labadmin"
+    },
+    "vm_password": {
+      "type": "String",
+      "value": "ObjDetLab@0192"
+    }
+  }
+}
