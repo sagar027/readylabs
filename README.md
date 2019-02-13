@@ -3,6 +3,7 @@
 This repository contains the notebooks, scripts and the ARM template to get you started and run the lab on your own Azure subscription. 
 
 Please deploy the ARM template using the following command -
+
 **Note:** You need the latest PowerShell Azure Module on you system. This deployment doesn't work in Cloud Shell. Please use Azure CLI command mentioned below if you are using the Cloud Shell.
 
 ```
