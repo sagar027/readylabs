@@ -3,6 +3,7 @@
 This repository contains the notebooks, scripts and the ARM template to get you started and run the lab on your own Azure subscription. 
 
 Please deploy the ARM template using the following command -
+**Note:** You need the latest PowerShell Azure Module on you system. This deployment doesn't work in Cloud Shell. Please use Azure CLI command mentioned below if you are using the Cloud Shell.
 
 ```
 New-AzDeployment -Location eastus2 -TemplateFile https://raw.githubusercontent.com/sagar027/readylabs/master/TF-LAB-ARM-Template.json -rgName <resource-group-name> -rgLocation eastus2
@@ -12,7 +13,7 @@ If using Azure CLI, use the following command -
 
 ```
 wget https://raw.githubusercontent.com/sagar027/readylabs/master/TF-LAB-ARM-Template.json
-az deployment create --location westus --template-file ./TF-LAB-ARM-Template.json --parameters rgName=<resource-group-name> rgLocation=westus
+az deployment create -n mydeployment --location westus --template-file ./TF-LAB-ARM-Template.json --parameters rgName=<resource-group-name> rgLocation=westus
 ```
 
 Once the deployment is complete, you will the output from the template which shows the credentials you can use as well as the Jupyter URL and SSH information.
