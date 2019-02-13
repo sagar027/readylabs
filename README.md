@@ -2,11 +2,11 @@
 
 This repository contains the notebooks, scripts and the ARM template to get you started and run the lab on your own Azure subscription.
 
-This template creates the resource group as well and as such doesn't work if you deploy it from the portal using Template Deployment.
+This template creates the resource group as well along with other resources and as such doesn't work if you deploy it from the portal using Template Deployment.
 
-Please deploy the ARM template using the following command -
+**Please deploy the ARM template using PowerShell or Azure CLI**
 
-**Note:** You need the latest PowerShell Azure Module on you system. This deployment doesn't work in Cloud Shell. Please use Azure CLI command mentioned below if you are using the Cloud Shell.
+**Note:** You need the latest PowerShell Azure Module on you system. This deployment doesn't work in Cloud Shell using PowerShell. Please use Azure CLI command mentioned below if you are using the Cloud Shell.
 
 ```
 New-AzDeployment -Location eastus2 -TemplateFile https://raw.githubusercontent.com/sagar027/readylabs/master/TF-LAB-ARM-Template.json -rgName <resource-group-name> -rgLocation eastus2
