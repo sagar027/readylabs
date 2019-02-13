@@ -1,6 +1,8 @@
 # TF Lab
 
-This repository contains the notebooks, scripts and the ARM template to get you started and run the lab on your own Azure subscription. 
+This repository contains the notebooks, scripts and the ARM template to get you started and run the lab on your own Azure subscription.
+
+This template creates the resource group as well and as such doesn't work if you deploy it from the portal using Template Deployment.
 
 Please deploy the ARM template using the following command -
 
